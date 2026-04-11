@@ -29,7 +29,7 @@ export const SpotifyProvider = ({ children }) => {
   const [featuredPlaylists, setFeaturedPlaylists] = useState([]);
   const [newReleases, setNewReleases] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [isConfigured, setIsConfigured] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(true);
   const [configDetails, setConfigDetails] = useState({
     hasClientId: false,
     hasClientSecret: false,
@@ -82,27 +82,17 @@ export const SpotifyProvider = ({ children }) => {
 
   // Check if Spotify is configured (manual check)
   const checkConfiguration = useCallback(() => {
-    const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-    const clientSecret = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
-
-    const hasClientId =
-      !!clientId && clientId !== "" && clientId !== "your_client_id_here";
-    const hasClientSecret = !!clientSecret && clientSecret !== "";
-    const isValidFormat = hasClientId && hasClientSecret;
+    const spotifyConfig = spotifyAPI.checkSpotifyConfig();
 
     setConfigDetails((prev) => ({
       ...prev,
-      hasClientId,
-      hasClientSecret,
-      isValidFormat,
+      hasClientId: spotifyConfig.hasClientId,
+      hasClientSecret: spotifyConfig.hasClientSecret,
+      isValidFormat: spotifyConfig.isConfigured,
     }));
 
-    if (isValidFormat) {
-      setIsConfigured(true);
-      return true;
-    }
-    setIsConfigured(false);
-    return false;
+    setIsConfigured(spotifyConfig.isConfigured);
+    return spotifyConfig.isConfigured;
   }, []);
 
   // Test Spotify connection

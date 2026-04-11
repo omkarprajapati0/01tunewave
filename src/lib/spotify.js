@@ -1,14 +1,9 @@
 // Spotify Web API Service
 // Uses Client Credentials Flow (no user authentication required)
 
-// Spotify API credentials - Replace with your own from developer.spotify.com
-const SPOTIFY_CLIENT_ID = (import.meta.env.VITE_SPOTIFY_CLIENT_ID || "").trim();
-const SPOTIFY_CLIENT_SECRET = (
-  import.meta.env.VITE_SPOTIFY_CLIENT_SECRET || ""
-).trim();
 const IS_DEV = import.meta.env.DEV;
 
-const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
+const SPOTIFY_TOKEN_ENDPOINT = "/api/spotify-token";
 const SPOTIFY_API_BASE = "https://api.spotify.com/v1";
 const DEBUG_API_LOGS = import.meta.env.VITE_DEBUG_API === "true";
 const REQUEST_CACHE_TTL_MS = 15000;
@@ -29,7 +24,6 @@ const debugLog = (...args) => {
 let accessToken = null;
 let tokenExpiry = null;
 let lastError = null;
-let hasWarnedMissingConfig = false;
 let tokenPromise = null;
 
 // Request dedupe/cache for GET endpoints
@@ -37,6 +31,14 @@ const requestCache = new Map();
 const inFlightRequests = new Map();
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const readJsonResponse = async (response) => {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+};
 
 const fetchWithTimeout = async (url, options = {}, timeoutMs = 12000) => {
   const controller = new AbortController();
@@ -65,29 +67,49 @@ const normalizeMarket = (market) => {
  * @returns {object} Configuration status
  */
 export const checkSpotifyConfig = () => {
-  const hasClientId = !!SPOTIFY_CLIENT_ID && SPOTIFY_CLIENT_ID.length > 10;
-  const hasClientSecret =
-    !!SPOTIFY_CLIENT_SECRET && SPOTIFY_CLIENT_SECRET.length > 10;
-  const isConfigured = hasClientId && hasClientSecret;
-
-  if (!isConfigured && !hasWarnedMissingConfig) {
-    hasWarnedMissingConfig = true;
-    if (IS_DEV) {
-      console.warn("⚠️ Spotify API credentials not configured properly");
-      if (!hasClientId) console.warn("   - Missing VITE_SPOTIFY_CLIENT_ID");
-      if (!hasClientSecret)
-        console.warn("   - Missing VITE_SPOTIFY_CLIENT_SECRET");
-    }
-  }
+  const isConfigured = true;
 
   return {
     isConfigured,
-    hasClientId,
-    hasClientSecret,
-    clientIdPrefix: hasClientId
-      ? SPOTIFY_CLIENT_ID.substring(0, 8) + "..."
-      : null,
+    hasClientId: true,
+    hasClientSecret: true,
+    clientIdPrefix: "server-side token endpoint",
   };
+};
+
+const getAccessTokenFromServer = async () => {
+  const response = await fetch(SPOTIFY_TOKEN_ENDPOINT, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  const data = await readJsonResponse(response);
+
+  if (!response.ok) {
+    const errorMessage =
+      data?.error?.message ||
+      data?.message ||
+      "Spotify token endpoint failed. Check your deployment environment variables.";
+    const error = new Error(errorMessage);
+    error.code = data?.error?.code || `SERVER_${response.status}`;
+    error.status = response.status;
+    throw error;
+  }
+
+  if (!data?.access_token) {
+    const error = new Error("Spotify token endpoint returned no access token.");
+    error.code = "TOKEN_MISSING";
+    throw error;
+  }
+
+  accessToken = data.access_token;
+  tokenExpiry = Date.now() + ((data.expires_in || 3600) - 60) * 1000;
+
+  debugLog("✅ Spotify access token obtained successfully");
+
+  return accessToken;
 };
 
 /**
@@ -106,60 +128,9 @@ export const getAccessToken = async () => {
   }
 
   tokenPromise = (async () => {
-    // Check configuration first
-    const config = checkSpotifyConfig();
-    if (!config.isConfigured) {
-      const error = new Error(
-        "Spotify API credentials not configured. Please add VITE_SPOTIFY_CLIENT_ID and VITE_SPOTIFY_CLIENT_SECRET to your .env file.",
-      );
-      error.code = "CREDENTIALS_MISSING";
-      throw error;
-    }
-
     try {
-      debugLog("🔑 Requesting Spotify access token...");
-      const credentials = btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
-
-      const response = await fetch(SPOTIFY_TOKEN_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${credentials}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: "grant_type=client_credentials",
-      });
-
-      if (!response.ok) {
-        await response.text();
-        let errorMessage = `Failed to get access token: ${response.status}`;
-
-        // Provide specific error messages for common issues
-        if (response.status === 401) {
-          errorMessage =
-            "Invalid Spotify credentials. Please check your Client ID and Client Secret.";
-        } else if (response.status === 403) {
-          errorMessage =
-            "Spotify API access denied. Your app may not have the required permissions.";
-        } else if (response.status === 429) {
-          errorMessage =
-            "Rate limited by Spotify API. Please wait a moment and try again.";
-        }
-
-        const error = new Error(errorMessage);
-        error.code = `HTTP_${response.status}`;
-        error.status = response.status;
-        throw error;
-      }
-
-      const data = await response.json();
-
-      // Cache token with expiry (subtract 60 seconds for safety margin)
-      accessToken = data.access_token;
-      tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
-
-      debugLog("✅ Spotify access token obtained successfully");
-
-      return accessToken;
+      debugLog("🔑 Requesting Spotify access token from server endpoint...");
+      return await getAccessTokenFromServer();
     } catch (error) {
       if (IS_DEV) {
         console.error("❌ Error getting Spotify access token:", error.message);

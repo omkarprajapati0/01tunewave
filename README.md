@@ -26,10 +26,12 @@ Recommended for production search behavior:
 - `VITE_ENABLE_YOUTUBE_DATA_API=true`
 - `VITE_ENABLE_EXTERNAL_PROXY_FALLBACK=false`
 
-Optional:
+Spotify integration:
 
 - `VITE_SPOTIFY_CLIENT_ID`
 - `VITE_SPOTIFY_CLIENT_SECRET`
+
+These are read by the Spotify token endpoint on the server side. Do not rely on them in the browser bundle.
 
 ## Local Development
 
@@ -52,12 +54,15 @@ npm run preview
 - Build command: `npm run build`
 - Output directory: `dist`
 - Routing fallback is already configured in `vercel.json`
+- Add `VITE_SPOTIFY_CLIENT_ID` and `VITE_SPOTIFY_CLIENT_SECRET` in the Vercel environment settings for the server-side token endpoint.
 
 ### Netlify
 
 - Build command: `npm run build`
 - Publish directory: `dist`
 - Routing fallback is already configured in `netlify.toml`
+
+Spotify auth is currently implemented with a server-side token endpoint in Vercel and Vite dev middleware. Netlify deployment will need the same serverless token pattern if you want Spotify to work there.
 
 ## Supabase Setup
 

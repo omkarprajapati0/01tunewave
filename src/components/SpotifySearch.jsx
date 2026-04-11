@@ -177,10 +177,14 @@ const SpotifySearch = () => {
             the environment variables:
           </p>
           <div className="mt-4 p-4 bg-gray-900 rounded text-left text-sm font-mono">
-            <p>VITE_SPOTIFY_CLIENT_ID=your_client_id</p>
-            <p>VITE_SPOTIFY_CLIENT_SECRET=your_client_secret</p>
+            <p>Set VITE_SPOTIFY_CLIENT_ID in your deployment env</p>
+            <p>Set VITE_SPOTIFY_CLIENT_SECRET in your deployment env</p>
           </div>
           <p className="mt-4 text-xs text-gray-400">
+            The app now reads Spotify credentials through a server-side token
+            endpoint.
+          </p>
+          <p className="mt-2 text-xs text-gray-400">
             Get your credentials from{" "}
             <a
               href="https://developer.spotify.com/dashboard"

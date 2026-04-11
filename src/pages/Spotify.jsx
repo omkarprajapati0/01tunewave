@@ -121,13 +121,16 @@ const Spotify = () => {
               <p className="text-lg font-semibold">Spotify Not Configured</p>
               <p className="text-sm mt-2">
                 To enable Spotify integration, add your Spotify API credentials
-                to the environment variables:
+                to your deployment environment variables:
               </p>
               <div className="mt-4 p-4 bg-gray-900 rounded text-left text-sm font-mono">
                 <p>VITE_SPOTIFY_CLIENT_ID=your_client_id</p>
                 <p>VITE_SPOTIFY_CLIENT_SECRET=your_client_secret</p>
               </div>
               <p className="mt-4 text-xs text-gray-400">
+                The app uses a server-side token endpoint in production.
+              </p>
+              <p className="mt-2 text-xs text-gray-400">
                 Get your credentials from{" "}
                 <a
                   href="https://developer.spotify.com/dashboard"

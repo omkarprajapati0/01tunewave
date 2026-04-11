@@ -11,6 +11,7 @@ import {
   useEffect,
   useRef,
 } from "react";
+import * as spotifyAPI from "../lib/spotify";
 import * as songApi from "../lib/songApi";
 import { allSongs as localAllSongs } from "../data/allSongs";
 
@@ -54,21 +55,11 @@ export const SongProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // API configuration state
-  const [isSpotifyConfigured, setIsSpotifyConfigured] = useState(false);
+  const [isSpotifyConfigured, setIsSpotifyConfigured] = useState(true);
 
   // Check Spotify configuration on mount
   useEffect(() => {
-    const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-    const clientSecret = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
-
-    const hasConfig =
-      !!clientId &&
-      clientId !== "" &&
-      clientId !== "your_client_id_here" &&
-      !!clientSecret &&
-      clientSecret !== "";
-
-    setIsSpotifyConfigured(hasConfig);
+    setIsSpotifyConfigured(spotifyAPI.checkSpotifyConfig().isConfigured);
   }, []);
 
   // Fetch songs by category
