@@ -1,0 +1,7 @@
+[34m🧪 YouTube Search CORS Fix Test Suite[0m
+[34m=====================================[0m
+[0mTest Query: "Hopeless Amanraj Gill official audio"
+[0m
+[34m🌐 Testing CORS Proxies...[0m
+[34m
+[1] Testing: https://api.allorigins.win/get?url=[0m
