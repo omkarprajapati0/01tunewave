@@ -324,14 +324,7 @@ export const PlayerProvider = ({ children }) => {
         console.log("No valid audio source for playback");
       }
     }
-  }, [
-    currentSong,
-    playing,
-    playAudio,
-    isValidAudioUrl,
-    isYouTubeSong,
-    index,
-  ]);
+  }, [currentSong, playing, playAudio, isValidAudioUrl, isYouTubeSong, index]);
 
   // Next track - handle YouTube fallback for songs without valid src
   const nextTrack = useCallback(async () => {
