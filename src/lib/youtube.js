@@ -305,9 +305,7 @@ export const searchYouTube = async (query, retryCount = 0) => {
       }
     } else {
       if (ENABLE_SCRAPE_FALLBACK) {
-        console.log(
-          "  ℹ️ YouTube API disabled, using fallback methods",
-        );
+        console.log("  ℹ️ YouTube API disabled, using fallback methods");
       } else {
         console.log(
           "  ℹ️ YouTube API disabled; scraping fallback is disabled in production",

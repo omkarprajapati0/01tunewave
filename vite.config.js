@@ -14,7 +14,10 @@ const spotifyDevPlugin = (env) => ({
           res.setHeader("Content-Type", "application/json");
           res.end(
             JSON.stringify({
-              error: { code: "METHOD_NOT_ALLOWED", message: "Method not allowed." },
+              error: {
+                code: "METHOD_NOT_ALLOWED",
+                message: "Method not allowed.",
+              },
             }),
           );
           return;
@@ -92,7 +95,10 @@ const spotifyDevPlugin = (env) => ({
           res.setHeader("Content-Type", "application/json");
           res.end(
             JSON.stringify({
-              error: { code: "METHOD_NOT_ALLOWED", message: "Method not allowed." },
+              error: {
+                code: "METHOD_NOT_ALLOWED",
+                message: "Method not allowed.",
+              },
             }),
           );
           return;
