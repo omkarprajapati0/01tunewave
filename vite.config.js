@@ -1,11 +1,48 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { createSpotifyTokenResult } from "./server/spotifyToken.js";
+import { createYouTubeSearchResult } from "./server/youtubeSearch.js";
 
 const spotifyDevPlugin = (env) => ({
   name: "spotify-token-dev-endpoint",
   configureServer(server) {
     server.middlewares.use(async (req, res, next) => {
+      if (req.url?.startsWith("/api/youtube-search")) {
+        if (req.method !== "GET") {
+          res.statusCode = 405;
+          res.setHeader("Allow", "GET");
+          res.setHeader("Content-Type", "application/json");
+          res.end(
+            JSON.stringify({
+              error: { code: "METHOD_NOT_ALLOWED", message: "Method not allowed." },
+            }),
+          );
+          return;
+        }
+
+        try {
+          const requestUrl = new URL(req.url, "http://localhost");
+          const query = requestUrl.searchParams.get("q") || "";
+          const result = await createYouTubeSearchResult({ query, env });
+          res.statusCode = result.status;
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Cache-Control", "no-store");
+          res.end(JSON.stringify(result.body));
+        } catch (error) {
+          res.statusCode = 500;
+          res.setHeader("Content-Type", "application/json");
+          res.end(
+            JSON.stringify({
+              error: {
+                code: "YOUTUBE_SEARCH_HANDLER_ERROR",
+                message: error.message || "Unexpected YouTube search error.",
+              },
+            }),
+          );
+        }
+        return;
+      }
+
       if (req.url !== "/api/spotify-token") {
         next();
         return;
@@ -48,6 +85,42 @@ const spotifyDevPlugin = (env) => ({
   },
   configurePreviewServer(server) {
     server.middlewares.use(async (req, res, next) => {
+      if (req.url?.startsWith("/api/youtube-search")) {
+        if (req.method !== "GET") {
+          res.statusCode = 405;
+          res.setHeader("Allow", "GET");
+          res.setHeader("Content-Type", "application/json");
+          res.end(
+            JSON.stringify({
+              error: { code: "METHOD_NOT_ALLOWED", message: "Method not allowed." },
+            }),
+          );
+          return;
+        }
+
+        try {
+          const requestUrl = new URL(req.url, "http://localhost");
+          const query = requestUrl.searchParams.get("q") || "";
+          const result = await createYouTubeSearchResult({ query, env });
+          res.statusCode = result.status;
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Cache-Control", "no-store");
+          res.end(JSON.stringify(result.body));
+        } catch (error) {
+          res.statusCode = 500;
+          res.setHeader("Content-Type", "application/json");
+          res.end(
+            JSON.stringify({
+              error: {
+                code: "YOUTUBE_SEARCH_HANDLER_ERROR",
+                message: error.message || "Unexpected YouTube search error.",
+              },
+            }),
+          );
+        }
+        return;
+      }
+
       if (req.url !== "/api/spotify-token") {
         next();
         return;

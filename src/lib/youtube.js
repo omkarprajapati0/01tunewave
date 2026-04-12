@@ -1,9 +1,8 @@
 // YouTube Search and Playback Service
 // Uses YouTube IFrame API to play songs (audio-only mode)
 
-// YouTube Data API v3 configuration
-const YOUTUBE_API_KEY = (import.meta.env.VITE_YOUTUBE_API_KEY || "").trim();
-const YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3";
+// YouTube lookup is performed through a server endpoint
+const YOUTUBE_SEARCH_ENDPOINT = "/api/youtube-search";
 const YOUTUBE_EMBED_BASE = "https://www.youtube-nocookie.com/embed/";
 const IS_DEV = import.meta.env.DEV;
 const YOUTUBE_DATA_API_FLAG = (
@@ -12,9 +11,8 @@ const YOUTUBE_DATA_API_FLAG = (
   .toString()
   .trim()
   .toLowerCase();
-const ENABLE_YOUTUBE_DATA_API = YOUTUBE_DATA_API_FLAG
-  ? YOUTUBE_DATA_API_FLAG === "true"
-  : !!YOUTUBE_API_KEY;
+const ENABLE_YOUTUBE_DATA_API =
+  YOUTUBE_DATA_API_FLAG === "" || YOUTUBE_DATA_API_FLAG === "true";
 const ENABLE_SCRAPE_FALLBACK = IS_DEV;
 const ENABLE_EXTERNAL_PROXY_FALLBACK =
   import.meta.env.VITE_ENABLE_EXTERNAL_PROXY_FALLBACK === "true";
@@ -50,9 +48,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * @returns {boolean}
  */
 export const isYouTubeAPIConfigured = () => {
-  return (
-    ENABLE_YOUTUBE_DATA_API && !!YOUTUBE_API_KEY && YOUTUBE_API_KEY.length > 10
-  );
+  return ENABLE_YOUTUBE_DATA_API;
 };
 
 /**
@@ -71,19 +67,11 @@ const searchYouTubeAPI = async (query) => {
   }
 
   if (!isYouTubeAPIConfigured()) {
-    throw new Error("YouTube API key not configured");
+    throw new Error("YouTube API disabled by configuration");
   }
 
-  const params = new URLSearchParams({
-    part: "snippet",
-    q: query,
-    type: "video",
-    videoEmbeddable: "true",
-    maxResults: "5",
-    key: YOUTUBE_API_KEY,
-  });
-
-  const response = await fetch(`${YOUTUBE_API_BASE}/search?${params}`);
+  const params = new URLSearchParams({ q: query });
+  const response = await fetch(`${YOUTUBE_SEARCH_ENDPOINT}?${params}`);
 
   if (!response.ok) {
     if (response.status === 403) {
@@ -104,15 +92,14 @@ const searchYouTubeAPI = async (query) => {
 
   const data = await response.json();
 
-  if (!data.items || data.items.length === 0) {
+  if (!data.success || !data.videoId) {
     return { success: false, error: "No results found" };
   }
 
-  const video = data.items[0];
   return {
-    videoId: video.id.videoId,
-    title: video.snippet.title,
-    thumbnail: video.snippet.thumbnails?.medium?.url,
+    videoId: data.videoId,
+    title: data.title,
+    thumbnail: data.thumbnail,
     success: true,
     method: "api",
   };
@@ -319,11 +306,11 @@ export const searchYouTube = async (query, retryCount = 0) => {
     } else {
       if (ENABLE_SCRAPE_FALLBACK) {
         console.log(
-          "  ℹ️ YouTube API key not configured, using fallback methods",
+          "  ℹ️ YouTube API disabled, using fallback methods",
         );
       } else {
         console.log(
-          "  ℹ️ YouTube API key not configured; scraping fallback is disabled in production",
+          "  ℹ️ YouTube API disabled; scraping fallback is disabled in production",
         );
       }
     }
@@ -334,7 +321,7 @@ export const searchYouTube = async (query, retryCount = 0) => {
         success: false,
         error: youtubeApiForbiddenForSession
           ? "YouTube API key is blocked (403)."
-          : "YouTube search unavailable in production without VITE_YOUTUBE_API_KEY.",
+          : "YouTube search unavailable in production.",
         isNetworkError: false,
       };
       setCachedFailure(query, result);

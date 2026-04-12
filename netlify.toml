@@ -3,6 +3,18 @@
   publish = "dist"
 
 [[redirects]]
+  from = "/api/spotify-token"
+  to = "/.netlify/functions/spotify-token"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/youtube-search"
+  to = "/.netlify/functions/youtube-search"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
