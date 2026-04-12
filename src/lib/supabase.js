@@ -1,8 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
-const FALLBACK_SUPABASE_URL = "https://pfjllceuucuzkgulpjqc.supabase.co";
-const FALLBACK_SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmamxsY2V1dWN1emtndWxwanFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDc5MzEsImV4cCI6MjA3NjU4MzkzMX0.zvIr0ioNX0I5hKTWgYOsYQIPV0MtozfnirEHmkmxU48";
+const FALLBACK_SUPABASE_URL = "https://example.supabase.co";
+const FALLBACK_SUPABASE_ANON_KEY = "supabase-anon-key-not-configured";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
 const SUPABASE_ANON_KEY =
@@ -70,7 +69,7 @@ export const hasSupabaseEnvConfig = Boolean(
 if (!hasSupabaseEnvConfig) {
   if (IS_DEV) {
     console.warn(
-      "Supabase env vars are missing. Using built-in fallback credentials. Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for production.",
+      "Supabase env vars are missing. Using non-production fallback values. Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for production.",
     );
   }
 }
