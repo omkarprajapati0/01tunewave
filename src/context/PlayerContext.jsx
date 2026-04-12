@@ -19,6 +19,8 @@ const SILENT_AUDIO =
 
 export const PlayerProvider = ({ children }) => {
   const audioRef = useRef(new Audio());
+  const fallbackInProgressRef = useRef(false);
+  const fallbackAttemptedRef = useRef(new Set());
 
   // YouTube player reference - will be set by YouTubePlayer component
   const youtubePlayerRef = useRef(null);
@@ -73,9 +75,93 @@ export const PlayerProvider = ({ children }) => {
     );
   }, []);
 
+  const songKey = useCallback(
+    (song) => `${song?.title || ""}::${song?.artist || ""}`,
+    [],
+  );
+
+  const tryYouTubeFallback = useCallback(
+    async (song, songIndex = null) => {
+      if (!song || isYouTubeSong(song)) {
+        return false;
+      }
+
+      if (fallbackInProgressRef.current) {
+        return false;
+      }
+
+      const key = songKey(song);
+      if (fallbackAttemptedRef.current.has(key)) {
+        return false;
+      }
+
+      fallbackAttemptedRef.current.add(key);
+      fallbackInProgressRef.current = true;
+      setError("Track preview unavailable. Trying YouTube fallback...");
+
+      try {
+        const youtubeSong = await searchAndCreateSong(song.title, song.artist);
+
+        if (!youtubeSong) {
+          setError("Could not play this track right now.");
+          setPlaying(false);
+          return false;
+        }
+
+        const fallbackSong = {
+          ...song,
+          src: youtubeSong.src,
+          srcType: "youtube",
+          source: "youtube",
+          cover: youtubeSong.cover || song.cover,
+          needsYouTubeFallback: false,
+          youtubeTitle: youtubeSong.youtubeTitle,
+        };
+
+        setSongs((prevSongs) => {
+          const targetIndex =
+            typeof songIndex === "number"
+              ? songIndex
+              : prevSongs.findIndex(
+                  (candidate) =>
+                    candidate?.title === song?.title &&
+                    candidate?.artist === song?.artist,
+                );
+
+          if (targetIndex < 0) {
+            return prevSongs;
+          }
+
+          const updated = [...prevSongs];
+          updated[targetIndex] = fallbackSong;
+          return updated;
+        });
+
+        if (typeof songIndex === "number") {
+          setIndex(songIndex);
+        }
+
+        setError(null);
+        setPlaying(true);
+        setIsYouTubePlaying(true);
+        return true;
+      } catch (fallbackError) {
+        if (IS_DEV) {
+          console.error("YouTube fallback failed:", fallbackError);
+        }
+        setError("Could not play this track right now.");
+        setPlaying(false);
+        return false;
+      } finally {
+        fallbackInProgressRef.current = false;
+      }
+    },
+    [isYouTubeSong, songKey],
+  );
+
   // Helper function to play audio with error handling
   const playAudio = useCallback(
-    async (songToPlay) => {
+    async (songToPlay, songIndex = null) => {
       // Determine if this is a YouTube source (use comprehensive check)
       const song = songToPlay;
       if (!song) return;
@@ -107,7 +193,10 @@ export const PlayerProvider = ({ children }) => {
           "No valid audio source, skipping audio playback. song?.src:",
           song?.src,
         );
-        setPlaying(false);
+        const recovered = await tryYouTubeFallback(song, songIndex);
+        if (!recovered) {
+          setPlaying(false);
+        }
         return;
       }
 
@@ -140,7 +229,10 @@ export const PlayerProvider = ({ children }) => {
           if (IS_DEV) {
             console.warn("Audio preview unavailable for this track");
           }
-          setError("Audio preview unavailable for this track.");
+          const recovered = await tryYouTubeFallback(song, songIndex);
+          if (!recovered) {
+            setError("Audio preview unavailable for this track.");
+          }
         } else {
           if (IS_DEV) {
             console.error("Error playing audio:", errorMessage);
@@ -150,7 +242,7 @@ export const PlayerProvider = ({ children }) => {
         setPlaying(false);
       }
     },
-    [isYouTubeSong, isValidAudioUrl],
+    [isYouTubeSong, isValidAudioUrl, tryYouTubeFallback],
   );
 
   // Format time helper
@@ -188,7 +280,7 @@ export const PlayerProvider = ({ children }) => {
       }
 
       setError(null);
-      playAudio(song);
+      playAudio(song, i);
     },
     [playAudio, isValidAudioUrl, isYouTubeSong],
   );
@@ -227,12 +319,19 @@ export const PlayerProvider = ({ children }) => {
         if (audioRef.current.src !== currentSong.src) {
           audioRef.current.src = currentSong.src;
         }
-        playAudio(currentSong);
+        playAudio(currentSong, index);
       } else {
         console.log("No valid audio source for playback");
       }
     }
-  }, [currentSong, playing, playAudio, isValidAudioUrl, isYouTubeSong]);
+  }, [
+    currentSong,
+    playing,
+    playAudio,
+    isValidAudioUrl,
+    isYouTubeSong,
+    index,
+  ]);
 
   // Next track - handle YouTube fallback for songs without valid src
   const nextTrack = useCallback(async () => {
@@ -313,7 +412,7 @@ export const PlayerProvider = ({ children }) => {
     }
 
     setError(null);
-    playAudio(song);
+    playAudio(song, newIndex);
   }, [songs, index, isShuffle, playAudio, isValidAudioUrl, isYouTubeSong]);
 
   // Previous track
@@ -348,7 +447,7 @@ export const PlayerProvider = ({ children }) => {
     }
 
     setError(null);
-    playAudio(song);
+    playAudio(song, newIndex);
   }, [songs, index, isShuffle, playAudio, isValidAudioUrl, isYouTubeSong]);
 
   // Seek to position - works for both audio and YouTube
@@ -430,6 +529,9 @@ export const PlayerProvider = ({ children }) => {
       // This happens when audio.src is empty or invalid (e.g., YouTube video ID)
       e.preventDefault();
       e.stopPropagation();
+      if (currentSong && !isYouTubeSong(currentSong)) {
+        void tryYouTubeFallback(currentSong, index);
+      }
       // Silently ignore - the UI will show appropriate state
       return false;
     };
@@ -470,7 +572,14 @@ export const PlayerProvider = ({ children }) => {
       // Restore original console.error
       console.error = originalConsoleError;
     };
-  }, [isRepeat, nextTrack]);
+  }, [
+    isRepeat,
+    nextTrack,
+    currentSong,
+    index,
+    isYouTubeSong,
+    tryYouTubeFallback,
+  ]);
 
   // Keyboard space to toggle play
   useEffect(() => {

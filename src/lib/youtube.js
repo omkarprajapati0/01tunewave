@@ -6,8 +6,15 @@ const YOUTUBE_API_KEY = (import.meta.env.VITE_YOUTUBE_API_KEY || "").trim();
 const YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3";
 const YOUTUBE_EMBED_BASE = "https://www.youtube-nocookie.com/embed/";
 const IS_DEV = import.meta.env.DEV;
-const ENABLE_YOUTUBE_DATA_API =
-  import.meta.env.VITE_ENABLE_YOUTUBE_DATA_API === "true";
+const YOUTUBE_DATA_API_FLAG = (
+  import.meta.env.VITE_ENABLE_YOUTUBE_DATA_API || ""
+)
+  .toString()
+  .trim()
+  .toLowerCase();
+const ENABLE_YOUTUBE_DATA_API = YOUTUBE_DATA_API_FLAG
+  ? YOUTUBE_DATA_API_FLAG === "true"
+  : !!YOUTUBE_API_KEY;
 const ENABLE_SCRAPE_FALLBACK = IS_DEV;
 const ENABLE_EXTERNAL_PROXY_FALLBACK =
   import.meta.env.VITE_ENABLE_EXTERNAL_PROXY_FALLBACK === "true";
