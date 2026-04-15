@@ -1,5 +1,6 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import { usePlaylist } from "../context/PlaylistContext";
 import { usePlayer } from "../context/PlayerContext";
 import { useSongs } from "../context/SongContext";
@@ -25,6 +26,7 @@ const getGradientForPlaylist = (playlistName) => {
 export default function PlaylistDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     getPlaylist,
     removeSongFromPlaylist,
@@ -206,6 +208,50 @@ export default function PlaylistDetail() {
       navigate("/playlists");
     }
   };
+
+  if (!user) {
+    return (
+      <div className="playlist-detail-empty">
+        <div className="max-w-lg w-full rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl p-8 text-center shadow-2xl">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-2xl text-white">
+            <i className="fa-solid fa-lock"></i>
+          </div>
+          <h2 style={{ color: "#fff" }}>Playlist is private</h2>
+          <p style={{ color: "#cbd5e1", marginTop: "12px" }}>
+            Log in to open this playlist.
+          </p>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "24px", flexWrap: "wrap" }}>
+            <Link
+              to="/login"
+              style={{
+                background: "linear-gradient(270deg, #cb3391, #2d30eb)",
+                color: "#fff",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: "25px",
+                textDecoration: "none",
+              }}
+            >
+              Go to Login
+            </Link>
+            <Link
+              to="/playlists"
+              style={{
+                background: "rgba(255,255,255,0.1)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.12)",
+                padding: "12px 24px",
+                borderRadius: "25px",
+                textDecoration: "none",
+              }}
+            >
+              Back to Playlists
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!playlist) {
     return (

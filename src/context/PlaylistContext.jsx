@@ -375,8 +375,13 @@ export const PlaylistProvider = ({ children }) => {
     );
   }, [spotifyPlaylists]);
 
+  const visiblePlaylists = user ? playlists : [];
+  const visibleSpotifyPlaylists = user ? spotifyPlaylists : [];
+  const visibleFavorites = user ? favorites : [];
+
   // Add song to favorites
   const addToFavorites = (song) => {
+    if (!user) return;
     setFavorites((prev) => {
       // Check if song already exists in favorites
       const exists = prev.some(
@@ -389,6 +394,7 @@ export const PlaylistProvider = ({ children }) => {
 
   // Remove song from favorites
   const removeFromFavorites = (song) => {
+    if (!user) return;
     setFavorites((prev) =>
       prev.filter((s) => !(s.title === song.title && s.artist === song.artist)),
     );
@@ -403,6 +409,7 @@ export const PlaylistProvider = ({ children }) => {
 
   // Create a new playlist
   const createPlaylist = (name) => {
+    if (!user) return null;
     if (!name.trim()) return null;
 
     const newPlaylist = {
@@ -418,11 +425,13 @@ export const PlaylistProvider = ({ children }) => {
 
   // Delete a playlist
   const deletePlaylist = (playlistId) => {
+    if (!user) return;
     setPlaylists((prev) => prev.filter((p) => p.id !== playlistId));
   };
 
   // Add song to playlist
   const addSongToPlaylist = (playlistId, song) => {
+    if (!user) return;
     setPlaylists((prev) =>
       prev.map((playlist) => {
         if (playlist.id !== playlistId) return playlist;
@@ -453,6 +462,7 @@ export const PlaylistProvider = ({ children }) => {
 
   // Remove song from playlist
   const removeSongFromPlaylist = (playlistId, songIndex) => {
+    if (!user) return;
     setPlaylists((prev) =>
       prev.map((playlist) => {
         if (playlist.id !== playlistId) return playlist;
@@ -467,6 +477,7 @@ export const PlaylistProvider = ({ children }) => {
 
   // Rename playlist
   const renamePlaylist = (playlistId, newName) => {
+    if (!user) return;
     if (!newName.trim()) return;
 
     setPlaylists((prev) =>
@@ -480,11 +491,12 @@ export const PlaylistProvider = ({ children }) => {
 
   // Get a specific playlist
   const getPlaylist = (playlistId) => {
-    return playlists.find((p) => p.id === playlistId);
+    return visiblePlaylists.find((p) => p.id === playlistId);
   };
 
   // Import Spotify playlist
   const importSpotifyPlaylist = (spotifyPlaylist) => {
+    if (!user) return null;
     const newPlaylist = {
       id: `spotify_${spotifyPlaylist.id}_${Date.now()}`,
       name: spotifyPlaylist.name,
@@ -502,6 +514,7 @@ export const PlaylistProvider = ({ children }) => {
 
   // Add songs from Spotify to a local playlist
   const addSpotifySongsToPlaylist = (playlistId, spotifyTracks) => {
+    if (!user) return;
     const transformedSongs = spotifyTracks
       .map((track) => {
         // If already transformed, use as-is
@@ -546,16 +559,18 @@ export const PlaylistProvider = ({ children }) => {
 
   // Get a specific Spotify playlist
   const getSpotifyPlaylist = (playlistId) => {
-    return spotifyPlaylists.find((p) => p.id === playlistId);
+    return visibleSpotifyPlaylists.find((p) => p.id === playlistId);
   };
 
   // Delete a Spotify playlist
   const deleteSpotifyPlaylist = (playlistId) => {
+    if (!user) return;
     setSpotifyPlaylists((prev) => prev.filter((p) => p.id !== playlistId));
   };
 
   // Add Spotify track to favorites
   const addSpotifyToFavorites = (spotifyTrack) => {
+    if (!user) return;
     const track = transformTrack(spotifyTrack);
     if (!track) return;
 
@@ -573,7 +588,7 @@ export const PlaylistProvider = ({ children }) => {
 
   // Get all favorites (including Spotify)
   const getAllFavorites = () => {
-    return favorites;
+    return visibleFavorites;
   };
 
   // Clear all user data (for logout/account deletion)
@@ -589,9 +604,9 @@ export const PlaylistProvider = ({ children }) => {
   return (
     <PlaylistContext.Provider
       value={{
-        playlists,
-        spotifyPlaylists,
-        favorites,
+        playlists: visiblePlaylists,
+        spotifyPlaylists: visibleSpotifyPlaylists,
+        favorites: visibleFavorites,
         createPlaylist,
         deletePlaylist,
         addSongToPlaylist,

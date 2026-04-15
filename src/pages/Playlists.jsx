@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { usePlaylist } from "../context/PlaylistContext";
+import { useAuth } from "../context/AuthContext";
 import { useSongs } from "../context/SongContext";
 import { usePlayer } from "../context/PlayerContext";
 import Sidebar from "../components/layout/Sidebar";
@@ -23,6 +24,7 @@ const getGradientForPlaylist = (playlistName) => {
 };
 
 export default function Playlists() {
+  const { user } = useAuth();
   const {
     playlists,
     createPlaylist,
@@ -235,6 +237,43 @@ export default function Playlists() {
   const handlePlaySearchResult = (song, index) => {
     playSong(searchResults, index);
   };
+
+  if (!user) {
+    return (
+      <div className="app-container playlists-page">
+        <Sidebar />
+        <main className="main-content playlists-main">
+          <div className="min-h-[70vh] flex items-center justify-center px-4">
+            <div className="max-w-lg w-full rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl p-8 text-center shadow-2xl">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-2xl text-white">
+                <i className="fa-solid fa-lock"></i>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-3">
+                Your playlists are hidden
+              </h2>
+              <p className="text-gray-300 mb-6">
+                Log in to see and manage your playlists.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-pink-600 to-indigo-600 px-6 py-3 font-semibold text-white hover:opacity-95 transition"
+                >
+                  Go to Login
+                </Link>
+                <Link
+                  to="/homepage"
+                  className="inline-flex items-center justify-center rounded-full bg-white/10 px-6 py-3 font-semibold text-white hover:bg-white/20 transition"
+                >
+                  Back to Home
+                </Link>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container playlists-page">
