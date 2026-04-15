@@ -220,7 +220,15 @@ export default function PlaylistDetail() {
           <p style={{ color: "#cbd5e1", marginTop: "12px" }}>
             Log in to open this playlist.
           </p>
-          <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "24px", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              justifyContent: "center",
+              marginTop: "24px",
+              flexWrap: "wrap",
+            }}
+          >
             <Link
               to="/login"
               style={{
