@@ -689,22 +689,7 @@ export default function Login() {
               paddingTop: "20px",
               borderTop: "1px solid rgba(255,255,255,0.1)",
             }}
-          >
-            <Link
-              to="/homepage"
-              style={{
-                color: "#7b7489",
-                fontSize: "13px",
-                textDecoration: "underline",
-                fontWeight: "500",
-                transition: "color 0.2s ease",
-              }}
-              onMouseEnter={(e) => (e.target.style.color = "#9b90aa")}
-              onMouseLeave={(e) => (e.target.style.color = "#7b7489")}
-            >
-              Skip and explore the app →
-            </Link>
-          </div>
+          ></div>
         </div>
       </div>
     </div>
