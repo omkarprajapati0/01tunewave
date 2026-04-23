@@ -337,7 +337,13 @@ export default function Login() {
                 placeholder="Full Name"
                 style={inputStyle}
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                // onChange={(e) => setFullName(e.target.value)} // comment this line
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^[A-Za-z\s]*$/.test(value)) {
+                    setFullName(value);
+                  }
+                }}
                 onFocus={(e) =>
                   (e.target.style.cssText = Object.entries(inputFocusStyle)
                     .map(
